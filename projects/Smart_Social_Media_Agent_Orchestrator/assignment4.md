@@ -11,7 +11,7 @@ The research question for this assignment is:
 Code repository link:
 
 ```text
-https://github.com/tanereskil/agentic_sdlc
+https://github.com/SelenArikan/agentic
 ```
 
 ---
