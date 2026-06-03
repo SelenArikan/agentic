@@ -1,0 +1,5 @@
+[Coordinator] hedef ve basari metrigi tanimlandi
+[CurriculumDesigner] kazanım ve ders akis plani olusturuldu
+[ActivityPlanner] etkinlik adimi eklendi
+[AssessmentAgent] quiz ve rubrik eklendi
+[QualityReviewer] sonuc: PASS

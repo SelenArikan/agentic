@@ -1,0 +1,82 @@
+[
+    {
+        "id": "001",
+        "title": "Develop CLI Interface",
+        "description": "Create the main command-line interface for the calculator, including a menu loop and input handling.",
+        "priority": "high",
+        "estimated_complexity": "medium",
+        "status": "pending",
+        "assigned_to": "analyst",
+        "comments": []
+    },
+    {
+        "id": "002",
+        "title": "Implement Arithmetic Operations",
+        "description": "Develop the core Python functions for addition, subtraction, multiplication, and division.",
+        "priority": "high",
+        "estimated_complexity": "medium",
+        "status": "pending",
+        "assigned_to": "analyst",
+        "comments": []
+    },
+    {
+        "id": "003",
+        "title": "Implement Input Validation",
+        "description": "Add validation for user inputs, including handling division by zero errors.",
+        "priority": "high",
+        "estimated_complexity": "low",
+        "status": "pending",
+        "assigned_to": "analyst",
+        "comments": []
+    },
+    {
+        "id": "004",
+        "title": "Implement JSON Storage",
+        "description": "Develop functions to read from and write calculation history to a history.json file using Python's built-in 'json' library.",
+        "priority": "high",
+        "estimated_complexity": "medium",
+        "status": "pending",
+        "assigned_to": "analyst",
+        "comments": []
+    },
+    {
+        "id": "005",
+        "title": "Implement View History Feature",
+        "description": "Add functionality to display past calculations stored in history.json.",
+        "priority": "medium",
+        "estimated_complexity": "low",
+        "status": "pending",
+        "assigned_to": "analyst",
+        "comments": []
+    },
+    {
+        "id": "006",
+        "title": "Module Separation",
+        "description": "Organize code into separate modules (main.py, calculator.py, storage.py) as per the architecture.",
+        "priority": "medium",
+        "estimated_complexity": "medium",
+        "status": "pending",
+        "assigned_to": "analyst",
+        "comments": []
+    },
+    {
+        "id": "007",
+        "title": "Add Docstrings and Comments",
+        "description": "Ensure all functions have docstrings and code is adequately commented for clarity and maintainability.",
+        "priority": "medium",
+        "estimated_complexity": "low",
+        "status": "pending",
+        "assigned_to": "analyst",
+        "comments": []
+    },
+    {
+        "id": "008",
+        "title": "PEP 8 Compliance",
+        "description": "Format the entire codebase to be PEP 8 compliant.",
+        "priority": "low",
+        "estimated_complexity": "low",
+        "status": "pending",
+        "assigned_to": "analyst",
+        "comments": []
+    }
+]

@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import time
 from core.agent import AIAgent
@@ -16,11 +17,21 @@ LANG_EXTENSIONS = {
 }
 
 def detect_language(text):
-    """Metinden programlama dilini tespit et, uzantısını döndür."""
+    """Metinden programlama dilini tespit et, uzantısını döndür.
+    
+    Tek karakterli veya kısa dil adları (örn. 'r', 'go') için tam kelime
+    sınırı (word boundary) kullanılır; böylece 'r' harfi her metinde
+    yanlış eşleşmez.
+    """
     text_lower = text.lower()
     for lang, ext in LANG_EXTENSIONS.items():
-        if lang in text_lower:
-            return ext
+        # Kısa isimler (≤3 karakter) için tam kelime eşleşmesi zorunlu
+        if len(lang) <= 3:
+            if re.search(r'\b' + re.escape(lang) + r'\b', text_lower):
+                return ext
+        else:
+            if lang in text_lower:
+                return ext
     return "py"  # varsayılan
 
 
@@ -292,6 +303,13 @@ def run_sdlc_simulation(
                 dev_comment = {"author": "developer", "content": dev_raw, "code": "", "assigned_to": "tester"}
 
         code = dev_comment.get("code", "")
+        # AI bazen "code" alanını string yerine dict/list olarak döndürebilir;
+        # write_file str beklediği için burada güvenli dönüşüm yapılır.
+        if isinstance(code, dict) or isinstance(code, list):
+            code = json.dumps(code, indent=4, ensure_ascii=False)
+        elif not isinstance(code, str):
+            code = str(code) if code else ""
+
         if code:
             # Uzantıyı developer comment'inden veya demand'dan tespit et
             comment_ext = detect_language(dev_comment.get("content", ""))

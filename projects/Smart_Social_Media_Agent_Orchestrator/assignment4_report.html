@@ -1,0 +1,253 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Assignment 4 Report</title><style>@page { size: A4; margin: 14mm 12mm; } body { font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;color:#161616;line-height:1.33;font-size:9.4pt;} h1{font-size:19pt;margin:0 0 9px;} h2{font-size:13.5pt;margin:13px 0 5px;padding-top:3px;border-top:1px solid #ddd;} h3{font-size:10.8pt;margin:8px 0 4px;} p{margin:3px 0;} ul{margin:3px 0 6px 15px;padding:0;} li{margin:1px 0;} table{width:100%;border-collapse:collapse;margin:5px 0 9px;font-size:7.3pt;page-break-inside:avoid;} th,td{border:1px solid #cfcfcf;padding:2.5px 3.5px;vertical-align:top;} th{background:#eef3f1;font-weight:700;} pre{background:#f6f6f6;border:1px solid #ddd;padding:6px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:7.5pt;} code{font-family:Menlo,Consolas,monospace;font-size:.92em;} hr{border:0;border-top:1px solid #ddd;margin:7px 0;}</style></head><body><h1>Assignment 4: Improving Requirement Reliability in a Multi-Agent Social Media System</h1>
+<h2>Objective</h2>
+<p>This assignment improves the multi-agent social media system developed and evaluated in the earlier assignments. Assignment 3 showed that a multi-agent pipeline is easier to inspect than a single-agent pipeline, but orchestration alone does not guarantee that user requirements are preserved. If the system extracts the wrong topic or loses a visual constraint, later agents can complete the workflow and still produce an unsuitable post.</p>
+<p>The research question for this assignment is:</p>
+<p><strong>Can a structured request-verification stage and a requirement-aware QA loop improve the reliability of a multi-agent social media generation pipeline?</strong></p>
+<p>Code repository link:</p>
+<pre><code>https://github.com/tanereskil/agentic_sdlc</code></pre>
+<hr>
+<h2>Part 1 - Baseline System</h2>
+<h3>Problem Definition</h3>
+<p>The system automates social media post preparation. A user provides a prompt such as “Make a post about Pilates” or a more detailed product request. The pipeline should:</p>
+<ul>
+<li>Infer the post topic and language.</li>
+<li>Decide whether writing, visual generation, QA, and upload are needed.</li>
+<li>Produce a caption.</li>
+<li>Produce a visual brief and image file when media is requested.</li>
+<li>Validate the output.</li>
+<li>Simulate a local browser upload when publishing is requested.</li>
+</ul>
+<h3>Baseline Agent Roles</h3>
+<p>The original system for this experiment is the existing full multi-agent pipeline.</p>
+<table><thead><tr><th>Agent</th><th>Baseline Role</th></tr></thead><tbody>
+<tr><td>Task Manager</td><td>Creates route, validates steps, retries failed agents</td></tr>
+<tr><td>Trend Researcher</td><td>Adds keywords and hashtags for short or trend-based prompts</td></tr>
+<tr><td>Content Writer</td><td>Writes caption and rough media prompt</td></tr>
+<tr><td>Visual Prompt Engineer</td><td>Converts rough media prompt into structured photo prompt</td></tr>
+<tr><td>Media Creator</td><td>Creates an image with provider or local placeholder path</td></tr>
+<tr><td>QA Agent</td><td>Checks caption/media completeness and safety</td></tr>
+<tr><td>Browser Operator</td><td>Simulates upload to local demo page</td></tr>
+</tbody></table>
+<h3>Baseline Workflow</h3>
+<pre><code>User Prompt
+    |
+    v
+Task Manager
+    |--&gt; Researcher (conditional)
+    |--&gt; Writer
+    |--&gt; Visual Prompt Engineer (conditional)
+    |--&gt; Media Creator (conditional)
+    |--&gt; QA Agent
+    |--&gt; Browser Operator (conditional)</code></pre>
+<p>The Task Manager already performs dynamic routing. It can skip research for explicit prompts, skip writer when exact caption text exists, and skip media/upload for text-only drafts.</p>
+<h3>Current Limitations of the Baseline</h3>
+<p>The baseline can finish workflows that are technically complete but still weak in requirement alignment. For example:</p>
+<ul>
+<li>A prompt containing an ambiguous reference can produce a generic topic such as <code>this and it</code>.</li>
+<li>A content pipeline can approve a post although a specific image instruction is only partially represented.</li>
+<li>Completion success can hide upstream mistakes because every downstream agent works from the initial topic and media prompt.</li>
+<li>More agents produce more external model/API calls in real provider mode, which increases timeout and provider-failure exposure.</li>
+</ul>
+<p>These limitations became visible during Assignment 3 experiments and manual screenshots. They define the improvements in this assignment.</p>
+<hr>
+<h2>Part 2 - Identify Weaknesses</h2>
+<h3>Weakness 1: Low-Confidence Topic Extraction</h3>
+<p>The baseline Task Manager tries to infer a topic from prompt text. For clear prompts this works. For vague prompts such as “Make a post about this and share it,” the baseline may extract the literal phrase <code>this and it</code> as a topic. The remaining agents then receive that topic and produce a generic caption and generic image brief.</p>
+<p>Why it occurs:</p>
+<ul>
+<li>The pipeline treats any non-empty topic-like phrase as usable unless it matches a small blocked set.</li>
+<li>The baseline does not maintain an explicit confidence score for topic extraction.</li>
+<li>QA sees a caption and media file, so it can approve the run even though the topic is semantically weak.</li>
+</ul>
+<p>Why it matters:</p>
+<ul>
+<li>The system can publish a meaningless post.</li>
+<li>Later agents cannot recover if the initial topic is wrong.</li>
+<li>A completed browser/upload step may incorrectly look like success.</li>
+</ul>
+<h3>Weakness 2: User Visual Requirements Are Not Explicit Contracts</h3>
+<p>Some prompts contain visual constraints instead of only a topic. Examples are:</p>
+<ul>
+<li>“Outdoor mat Pilates in a park, not an indoor studio.”</li>
+<li>“A close-up of a woman’s ear with three silver earrings.”</li>
+</ul>
+<p>The baseline Writer and Visual Prompt Engineer may preserve many of these details, but the QA Agent mainly checks safety, media existence, and coarse topic alignment. It does not treat every visual condition as an explicit checklist.</p>
+<p>Why it occurs:</p>
+<ul>
+<li>Visual constraints are carried in free-form text fields.</li>
+<li>Generic QA approval does not guarantee exact constraint coverage.</li>
+<li>A media prompt can mention the topic <code>silver earrings</code> while missing one required detail such as count or close-up framing.</li>
+</ul>
+<p>Why it matters:</p>
+<ul>
+<li>A generated post can be plausible but not satisfy the user request.</li>
+<li>Product posts are especially sensitive to count, material, setting, and composition constraints.</li>
+</ul>
+<h3>Weakness 3: Completion and Cost Do Not Mean Reliability</h3>
+<p>Multi-agent orchestration adds logs, validation calls, and provider calls. In local deterministic mode this overhead is small. In real API mode, Assignment 3 exposed timeouts and provider connection errors. Extra agent calls increase the surface area for latency and service failures.</p>
+<p>Why it occurs:</p>
+<ul>
+<li>Specialized agents create more handoffs than a single combined call.</li>
+<li>Text and image providers can fail independently.</li>
+<li>Baseline success metrics can over-emphasize final completion without separating provider failure from reasoning failure.</li>
+</ul>
+<p>Why it matters:</p>
+<ul>
+<li>The system needs verification and fallback behavior, not only more agents.</li>
+<li>Some steps should be stopped early when confidence is low instead of producing an expensive low-quality post.</li>
+</ul>
+<hr>
+<h2>Part 3 - System Improvements</h2>
+<p>I implemented three connected improvements. They are designed to improve requirement quality before adding more generation cost.</p>
+<h3>Improvement 1: Structured Request Brief Verifier</h3>
+<p>I added <code>RequestBriefVerifierAgent</code> in:</p>
+<pre><code>agents/requirement_brief.py</code></pre>
+<p>Before the improved Task Manager executes the normal route, this verifier creates a structured brief:</p>
+<pre><code>{
+  &quot;topic&quot;: &quot;silver earrings&quot;,
+  &quot;language&quot;: &quot;en&quot;,
+  &quot;media_required&quot;: true,
+  &quot;visual_constraints&quot;: [
+    &quot;close-up composition&quot;,
+    &quot;earrings visible on a woman&#x27;s ear&quot;,
+    &quot;three earrings&quot;,
+    &quot;silver earrings&quot;
+  ],
+  &quot;avoid_constraints&quot;: [],
+  &quot;confidence&quot;: 0.92
+}</code></pre>
+<p>The brief separates topic extraction from visual requirement extraction. It also detects ambiguous phrases such as <code>post about this</code>.</p>
+<h3>Improvement 2: Confidence Gate and Human Approval State</h3>
+<p>The improved pipeline uses <code>ImprovedTaskManagerAgent</code> in:</p>
+<pre><code>agents/improved_task_manager.py</code></pre>
+<p>If the request brief confidence is low and the topic is ambiguous, the improved system does not proceed blindly. It asks for a topic clarification. Low-confidence runs also mark a human approval requirement before publish. If a pipeline reaches publish with an approval requirement and no approval callback exists, browser upload is blocked with <code>awaiting_approval</code>.</p>
+<p>This is a controlled human-in-the-loop change:</p>
+<ul>
+<li>High-confidence prompts continue automatically.</li>
+<li>Ambiguous prompts ask for clarification.</li>
+<li>Repaired or low-confidence publish operations can require human approval.</li>
+</ul>
+<h3>Improvement 3: Requirement-Aware QA and Feedback Repair</h3>
+<p>I added <code>RequirementAwareQAAgent</code> in:</p>
+<pre><code>agents/requirement_qa.py</code></pre>
+<p>It runs after normal QA approval and checks the structured request brief:</p>
+<ul>
+<li>Does an outdoor requirement remain visible in the media prompt?</li>
+<li>Does mat Pilates remain a mat-based visual direction?</li>
+<li>Are jewelry count/material/composition requirements present?</li>
+<li>Are forbidden directions such as indoor studio still present in the positive visual prompt?</li>
+</ul>
+<p>If this QA rejects a visual requirement mismatch, the improved Task Manager routes the feedback back into the visual branch:</p>
+<pre><code>Requirement-Aware QA Reject
+        |
+        v
+Task Manager Requirement Repair
+        |
+        v
+Constraint Injection -&gt; Visual Prompt Engineer -&gt; Media Creator -&gt; QA</code></pre>
+<p>The improved Task Manager also injects request brief visual constraints before visual prompt generation. In the deterministic experiment, this preventive step avoided extra QA repair loops. The feedback loop still exists for provider/model outputs that violate a constraint after generation.</p>
+<h3>Implementation Footprint</h3>
+<table><thead><tr><th>File</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><code>models.py</code></td><td>Adds request brief, confidence, and human approval state</td></tr>
+<tr><td><code>agents/requirement_brief.py</code></td><td>Structured request brief and constraint injection</td></tr>
+<tr><td><code>agents/requirement_qa.py</code></td><td>Requirement-aware verification</td></tr>
+<tr><td><code>agents/improved_task_manager.py</code></td><td>Improved route, feedback repair, approval gate</td></tr>
+<tr><td><code>tools/run_assignment4_experiment.py</code></td><td>Original vs improved experiment runner</td></tr>
+<tr><td><code>tests/test_assignment4_improvements.py</code></td><td>Focused improvement tests</td></tr>
+</tbody></table>
+<hr>
+<h2>Part 4 - Experimental Comparison</h2>
+<h3>Experiment Design</h3>
+<p>The experiment compares:</p>
+<ul>
+<li><code>original_multi_agent</code>: existing baseline <code>TaskManagerAgent</code></li>
+<li><code>improved_multi_agent</code>: <code>ImprovedTaskManagerAgent</code></li>
+</ul>
+<p>Both systems use the same seven prompts. The primary run uses deterministic local mode:</p>
+<pre><code>/Users/alki/.pyenv/versions/3.13.2/bin/python3 \
+  projects/Smart_Social_Media_Agent_Orchestrator/tools/run_assignment4_experiment.py \
+  --provider mock \
+  --image-provider pillow</code></pre>
+<p>Output directory:</p>
+<pre><code>projects/Smart_Social_Media_Agent_Orchestrator/outputs/assignment4_experiment/20260521_145921</code></pre>
+<h3>Test Cases</h3>
+<table><thead><tr><th>Case</th><th>Weakness Target</th></tr></thead><tbody>
+<tr><td>A4-T1 Short Pilates</td><td>No-regression clear prompt</td></tr>
+<tr><td>A4-T2 Ambiguous <code>this</code></td><td>Confidence gate and clarification</td></tr>
+<tr><td>A4-T3 Outdoor mat Pilates</td><td>Preserve environment and mat/studio constraint</td></tr>
+<tr><td>A4-T4 Jewelry constraints</td><td>Preserve close-up, count, and material</td></tr>
+<tr><td>A4-T5 Exact caption</td><td>Preserve mixed caption + image intent</td></tr>
+<tr><td>A4-T6 Turkish outdoor</td><td>Preserve Turkish topic and visual direction</td></tr>
+<tr><td>A4-T7 Caption only</td><td>Preserve efficient text-only route</td></tr>
+</tbody></table>
+<h3>Metrics</h3>
+<table><thead><tr><th>Metric</th><th>Measurement</th></tr></thead><tbody>
+<tr><td>Overall score</td><td>Weighted score for topic, requirements, caption, completeness, QA, media/upload, action</td></tr>
+<tr><td>Correctness</td><td>Topic, requirement, language, exact-caption, and QA outcome</td></tr>
+<tr><td>Requirement score</td><td>Coverage of expected visual requirement groups and forbidden visual terms</td></tr>
+<tr><td>Clarification score</td><td>For ambiguous prompt, whether system asks for topic instead of publishing</td></tr>
+<tr><td>Completeness</td><td>Caption, required media, required upload, and QA status</td></tr>
+<tr><td>Failure rate</td><td>Wrong expected action, exception, or non-approved QA for complete-output cases</td></tr>
+<tr><td>Latency</td><td>Wall-clock milliseconds</td></tr>
+<tr><td>LLM step proxy</td><td>Model-capable planned phases</td></tr>
+<tr><td>Logs and approvals</td><td>Coordination overhead and human gate evidence</td></tr>
+</tbody></table>
+<h3>Aggregate Results</h3>
+<table><thead><tr><th>System</th><th>Mean Overall</th><th>Correctness</th><th>Requirement</th><th>Completeness</th><th>Latency ms</th><th>Logs</th><th>LLM Step Proxy</th><th>Human Approvals</th><th>Failure Rate</th></tr></thead><tbody>
+<tr><td>Original Multi-Agent</td><td>0.85</td><td>0.85</td><td>0.95</td><td>0.86</td><td>15.02</td><td>13.71</td><td>3.00</td><td>0.00</td><td>0.14</td></tr>
+<tr><td>Improved Multi-Agent</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>10.42</td><td>14.71</td><td>2.43</td><td>0.14</td><td>0.00</td></tr>
+</tbody></table>
+<p>The improved mean latency is lower in this deterministic table mainly because the improved system stops early on the ambiguous A4-T2 prompt instead of generating a full low-confidence post. For complete-output cases, the improved workflow usually has extra log entries because it adds verification.</p>
+<h3>Key Per-Test Results</h3>
+<table><thead><tr><th>Case</th><th>Original Result</th><th>Improved Result</th><th>Interpretation</th></tr></thead><tbody>
+<tr><td>A4-T2 Ambiguous <code>this</code></td><td>Published with topic <code>this and it</code>; score 0.00</td><td>Asked for topic clarification; score 1.00</td><td>Confidence gate prevents meaningless publish</td></tr>
+<tr><td>A4-T4 Jewelry constraints</td><td>Requirement score 0.67</td><td>Requirement score 1.00</td><td>Structured constraints improve image brief coverage</td></tr>
+<tr><td>A4-T1, T3, T5, T6, T7</td><td>Complete and approved</td><td>Complete and approved</td><td>Improvements did not break normal routes</td></tr>
+</tbody></table>
+<h3>Representative Logs</h3>
+<p>Original ambiguous flow:</p>
+<pre><code>topic: this and it
+qa_status: approved
+browser_status: success</code></pre>
+<p>Improved ambiguous flow:</p>
+<pre><code>request_brief_verifier low_confidence
+task_manager clarification_needed
+question: What specific topic or product should the post cover?</code></pre>
+<p>Improved constraint-aware flow:</p>
+<pre><code>request_brief_verifier constraints_applied
+visual_prompt_engineer validated
+requirement_qa approved</code></pre>
+<hr>
+<h2>Part 5 - Discussion</h2>
+<h3>Which Improvements Worked Well?</h3>
+<p>The structured request brief worked well. It created a clear topic/constraint boundary before generation. The largest gain appeared in the ambiguous prompt: the original system completed a meaningless post, while the improved system treated the same input as insufficient information.</p>
+<p>Constraint injection and requirement-aware QA also improved product visual reliability. In the jewelry case, the original result was approved but received only <code>0.67</code> visual requirement coverage. The improved result preserved the close-up, material, and count expectations and reached <code>1.00</code>.</p>
+<h3>Which Improvements Did Not Add Visible Benefit in Every Case?</h3>
+<p>The improved system adds extra logs and verifier state even for easy prompts. For T1, T3, T5, T6, and T7 both systems already produced correct deterministic outputs. The extra verification did not change the final score there.</p>
+<p>The requirement repair feedback loop did not trigger in the deterministic aggregate run. This is not a bug: the pre-generation request brief constraint injection prevented the tested mismatches before QA. The repair path is still needed for real provider outputs, where a text or image model may ignore instructions after prompt generation.</p>
+<h3>Unexpected Outcomes</h3>
+<p>Mean latency became lower for the improved system in the deterministic run. This does not mean verification is always faster. It occurs because the improved ambiguous run stops after three logs, while the original baseline continues through writing, media generation, QA, and browser upload. The result supports early stopping as an efficiency strategy for low-confidence requests.</p>
+<h3>New Problems or Trade-Offs</h3>
+<p>The improvements introduce new complexity:</p>
+<ul>
+<li>More state fields must remain consistent.</li>
+<li>The verifier rules need maintenance as new domains and languages are added.</li>
+<li>Human approval gates can slow publishing if triggered too often.</li>
+<li>Requirement scoring currently checks prompt coverage, not the final aesthetics of a generated image.</li>
+</ul>
+<p>The improved design is still better for this workflow because it makes uncertain decisions explicit rather than hiding them behind a completed pipeline.</p>
+<hr>
+<h2>Part 6 - Reflection: Human + AI Collaboration</h2>
+<p>Humans should not manually approve every low-risk draft. AI agents can independently route work, draft captions, generate image prompts, validate file existence, and prepare local previews when confidence is high and requirements are clear.</p>
+<p>Human oversight is appropriate when:</p>
+<ul>
+<li>Topic confidence is low.</li>
+<li>A post is being published to a real external account.</li>
+<li>Brand, legal, safety, or sensitive product claims are involved.</li>
+<li>QA had to repair a requirement mismatch.</li>
+<li>Generated media must accurately represent a product or person.</li>
+</ul>
+<p>The practical design principle is selective oversight. Humans should remain in the loop for high-impact or low-confidence decisions, while agents handle repetitive drafting and validation steps. A reliable agentic system is not one that runs autonomously at all costs. It is one that knows when autonomy is justified and when uncertainty should be exposed to a human.</p>
+<hr>
+<h2>Responsible Use of AI</h2>
+<p>AI tools were used to help implement, test, and document the system. I remain responsible for the experiment design, metric definitions, interpretation of results, and limitations. The deterministic experiment is intentionally separated from real provider behavior so that architectural improvements are not confused with temporary API availability.</p></body></html>

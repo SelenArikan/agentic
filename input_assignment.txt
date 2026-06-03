@@ -1,0 +1,2 @@
+project_name: Campus_Inventory_App
+customer_wish: Build a desktop command-line inventory application in Python for a university lab. It should support adding products, removing products, listing all products, and saving/loading data in JSON. Start with around 200 products. There is only one admin user and no role-based permissions. Keep the code modular and beginner-friendly.

@@ -61,8 +61,10 @@ All outputs are saved under `projects/<project_name>/`:
 
 - `demand.txt` — customer requirements analysis
 - `tasks/001_project_tasks.json` — task list with full comment history
-- `codes/` — generated Python files per task
+- `analysis/` — analyst notes per task (reserved)
+- `codes/` — generated source files per task
 - `tests/` — test reports
+- `output/` — final compiled output (reserved)
 
 ## Notes
 

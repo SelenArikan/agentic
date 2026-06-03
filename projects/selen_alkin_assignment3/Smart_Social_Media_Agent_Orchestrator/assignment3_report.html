@@ -1,0 +1,271 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Assignment 3 Report</title><style>
+@page { size: A4; margin: 11mm 10mm; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; color: #161616; line-height: 1.22; font-size: 8.9pt; }
+h1 { font-size: 18pt; margin: 0 0 8px; }
+h2 { font-size: 12.5pt; margin: 10px 0 4px; padding-top: 3px; border-top: 1px solid #ddd; }
+h3 { font-size: 10.1pt; margin: 7px 0 3px; }
+p { margin: 2.5px 0; }
+ul { margin: 3px 0 5px 14px; padding: 0; }
+li { margin: 1px 0; }
+table { width: 100%; border-collapse: collapse; margin: 4px 0 7px; font-size: 6.9pt; page-break-inside: avoid; }
+th, td { border: 1px solid #cfcfcf; padding: 2px 3px; vertical-align: top; }
+th { background: #f1f4f3; font-weight: 700; }
+pre { background: #f6f6f6; border: 1px solid #ddd; padding: 5px; overflow-wrap: anywhere; white-space: pre-wrap; font-size: 7.1pt; }
+code { font-family: Menlo, Consolas, monospace; font-size: 0.92em; }
+hr { border: 0; border-top: 1px solid #ddd; margin: 6px 0; }
+strong { font-weight: 700; }
+</style></head><body>
+<h1>Assignment 3: Evaluating Single-Agent and Multi-Agent AI Systems</h1>
+<h2>Objective</h2>
+<p>The objective of this assignment is to evaluate when an agent-based design is useful and when it adds unnecessary complexity. I compare two approaches for the same AI task: a single-agent social media generator and a multi-agent social media generator. Both systems receive the same user prompts and produce comparable outputs: topic, caption, media prompt, generated media path, QA result, browser/upload result, and execution logs.</p>
+<p>The main research question is:</p>
+<p><strong>Does a multi-agent architecture improve output quality and reliability enough to justify its extra coordination cost?</strong></p>
+<hr>
+<h2>Part 1 - Experimental Setup</h2>
+<h3>Task Definition</h3>
+<p>The task is automated social media post generation. Given a user prompt, the system should:</p>
+<ul>
+<li>Understand the requested topic and platform.</li>
+<li>Decide whether research, writing, image generation, QA, and upload are needed.</li>
+<li>Generate a caption.</li>
+<li>Generate or prepare a visual prompt and media file when required.</li>
+<li>Check the output for quality and safety.</li>
+<li>Simulate publishing to a local demo upload page.</li>
+</ul>
+<p>This task is appropriate for comparing agentic systems because the amount of work changes depending on the prompt. For example, a vague prompt like “Make a post about Pilates” requires planning, caption writing, media generation, QA, and upload. A detailed prompt like “Use this exact caption with a reformer bed image” should preserve the supplied caption and avoid unnecessary writing.</p>
+<h3>System A: Single-Agent Baseline</h3>
+<p>The single-agent system is implemented in <code>single_agent_version/</code>. It uses one agent, <code>SingleSocialMediaAgent</code>, to handle all responsibilities:</p>
+<ul>
+<li>Planning</li>
+<li>Topic extraction</li>
+<li>Caption writing</li>
+<li>Media prompt construction</li>
+<li>Media generation</li>
+<li>QA checking</li>
+<li>One repair attempt</li>
+<li>Local demo upload</li>
+</ul>
+<p>This is the simpler baseline. It has fewer moving parts, fewer logs, and fewer model-like steps. Its weakness is that one agent must keep all requirements in its own context, which can cause mixed instructions to be collapsed into one interpretation.</p>
+<h3>System B: Full Multi-Agent System</h3>
+<p>The full multi-agent system uses specialized agents coordinated by a Task Manager:</p>
+<table>
+<thead><tr><th>Agent</th><th>Responsibility</th></tr></thead>
+<tbody>
+<tr><td>Task Manager</td><td>Routes work, validates each step, skips unnecessary agents, triggers repair</td></tr>
+<tr><td>Trend Researcher</td><td>Produces trend keywords and hashtags when the prompt is vague</td></tr>
+<tr><td>Content Writer</td><td>Writes captions and rough media prompts</td></tr>
+<tr><td>Visual Prompt Engineer</td><td>Converts rough image requests into professional photo prompts</td></tr>
+<tr><td>Media Creator</td><td>Calls image APIs or local image generation</td></tr>
+<tr><td>QA Agent</td><td>Checks caption/media quality and safety</td></tr>
+<tr><td>Browser Operator</td><td>Simulates upload to the local demo page</td></tr>
+</tbody></table>
+<p>The architecture follows a hub-and-spoke pattern:</p>
+<pre><code>User Prompt
+    |
+    v
+Task Manager
+    |----&gt; Researcher
+    |----&gt; Writer
+    |----&gt; Visual Prompt Engineer
+    |----&gt; Media Creator
+    |----&gt; QA Agent
+    |----&gt; Browser Operator</code></pre>
+<p>The Task Manager dynamically skips agents. For example, if the user already provides an exact caption, the Writer is skipped. If the user requests text only, the Media Creator and Browser Operator are skipped.</p>
+<h3>Comparable Inputs and Outputs</h3>
+<p>Both systems were evaluated on the same five test cases.</p>
+<table>
+<thead><tr><th>ID</th><th>Input Type</th><th>Prompt Summary</th><th>Expected Output</th></tr></thead>
+<tbody>
+<tr><td>T1</td><td>Vague prompt</td><td>“Make a post about Pilates.”</td><td>English Pilates caption, generated media, demo upload</td></tr>
+<tr><td>T2</td><td>Detailed English product prompt</td><td>Instagram jewelry seller asks for close-up woman&#x27;s ear with 3 silver earrings</td><td>English jewelry caption, silver earrings visual, demo upload</td></tr>
+<tr><td>T3</td><td>Turkish product prompt</td><td>Outdoor sports equipment company asks for a man hiking in mountains</td><td>Turkish caption, outdoor equipment visual, demo upload</td></tr>
+<tr><td>T4</td><td>Exact caption + image</td><td>Use exact text “Join my class!” with a reformer bed picture</td><td>Exact caption preserved, reformer/Pilates image, demo upload</td></tr>
+<tr><td>T5</td><td>Text-only draft</td><td>Write only a caption for a luxury jewelry launch, no image, draft only</td><td>English caption, no media, no upload</td></tr>
+</tbody></table>
+<p>Expected comparable output fields:</p>
+<ul>
+<li><code>topic</code></li>
+<li><code>caption</code></li>
+<li><code>media_prompt</code></li>
+<li><code>optimized_media_prompt</code></li>
+<li><code>media_path</code></li>
+<li><code>qa_status</code></li>
+<li><code>browser_status</code></li>
+<li>execution logs</li>
+</ul>
+<hr>
+<h2>Part 2 - Metrics Definition</h2>
+<p>I used automatic metrics that can be computed from each run. The goal is not only to judge final quality, but also to measure coordination overhead and reliability.</p>
+<table>
+<thead><tr><th>Metric</th><th>Why It Is Relevant</th><th>Measurement Method</th></tr></thead>
+<tbody>
+<tr><td>Correctness</td><td>The output must match the requested topic, language, and QA result.</td><td>Average of topic score, language score, and QA score.</td></tr>
+<tr><td>Completeness</td><td>A usable post needs all required pieces.</td><td>Checks caption, required media, required upload, and QA status.</td></tr>
+<tr><td>Consistency</td><td>Caption, topic, and media prompt should describe the same request.</td><td>Checks whether expected topic terms appear across topic/caption/media fields.</td></tr>
+<tr><td>Latency</td><td>Practical systems must finish in acceptable time.</td><td>Wall-clock runtime in milliseconds.</td></tr>
+<tr><td>Log Count</td><td>More logs indicate more coordination overhead.</td><td>Number of execution log entries.</td></tr>
+<tr><td>LLM Step Proxy</td><td>Direct token usage can vary, so model-like steps approximate cost.</td><td>Counts Researcher, Writer, Visual Prompt Engineer, QA, or one single-agent content step.</td></tr>
+<tr><td>Failure Rate</td><td>Automation must handle errors reliably.</td><td>Percentage of runs with exception or non-approved QA status.</td></tr>
+<tr><td>Overall Score</td><td>Gives a compact comparison.</td><td>Weighted score across correctness, completeness, consistency, media, and upload.</td></tr>
+</tbody></table>
+<p>Important limitation: this experiment does not use a human visual-quality score as part of the primary metric. The media metric checks whether an image was produced and whether the text fields stay aligned with the requested topic. It does not prove that the generated image is aesthetically better. For that reason, image quality should be discussed as a qualitative observation, not as a fully measured result.</p>
+<p>The overall score was computed as:</p>
+<pre><code>overall = 0.35 * correctness
+        + 0.25 * completeness
+        + 0.20 * consistency
+        + 0.10 * media_score
+        + 0.10 * upload_score</code></pre>
+<p>These weights prioritize semantic quality first, then whether the system produced all required artifacts, and finally media/upload success.</p>
+<hr>
+<h2>Part 3 - Experiment Execution</h2>
+<p>The experiment runner is implemented in:</p>
+<pre><code>projects/Smart_Social_Media_Agent_Orchestrator/tools/run_assignment3_experiment.py</code></pre>
+<p>Primary deterministic experiment:</p>
+<pre><code>/Users/alki/.pyenv/versions/3.13.2/bin/python3 \
+  projects/Smart_Social_Media_Agent_Orchestrator/tools/run_assignment3_experiment.py \
+  --provider mock \
+  --image-provider pillow</code></pre>
+<p>This produced 15 total executions:</p>
+<ul>
+<li>5 test cases</li>
+<li>3 systems per test case</li>
+<li>1 repeat</li>
+</ul>
+<p>The primary run used <code>provider=mock</code> and <code>image_provider=pillow</code>. This makes the experiment deterministic and repeatable. Real API services can introduce temporary failures, latency spikes, and model variability, so I used the mock/Pillow run as the main scientific baseline.</p>
+<p>Primary output directory:</p>
+<pre><code>projects/Smart_Social_Media_Agent_Orchestrator/outputs/assignment3_experiment/20260514_150714</code></pre>
+<p>Generated artifacts:</p>
+<ul>
+<li><code>results.json</code></li>
+<li><code>results.csv</code></li>
+<li><code>results_table.md</code></li>
+<li><code>aggregate_summary.json</code></li>
+</ul>
+<p>I also ran a supplementary real API trial with NVIDIA/Mistral providers. That run is discussed separately because external API availability affected some results.</p>
+<hr>
+<h2>Part 4 - Results and Analysis</h2>
+<h3>Aggregate Results</h3>
+<table>
+<thead><tr><th>System</th><th>Mean Overall</th><th>Mean Correctness</th><th>Mean Completeness</th><th>Mean Consistency</th><th>Mean Latency ms</th><th>Mean Logs</th><th>LLM Step Proxy</th><th>Failure Rate</th></tr></thead>
+<tbody>
+<tr><td>Full Multi-Agent</td><td>0.99</td><td>0.97</td><td>1.00</td><td>1.00</td><td>10.21</td><td>13.4</td><td>2.8</td><td>0.00</td></tr>
+<tr><td>Simplified Multi-Agent</td><td>0.99</td><td>0.97</td><td>1.00</td><td>1.00</td><td>11.90</td><td>14.8</td><td>1.8</td><td>0.00</td></tr>
+<tr><td>Single-Agent</td><td>0.94</td><td>0.93</td><td>1.00</td><td>0.80</td><td>9.36</td><td>7.4</td><td>1.0</td><td>0.00</td></tr>
+</tbody></table>
+<h3>Per-Test Results</h3>
+<table>
+<thead><tr><th>Case</th><th>System</th><th>Overall</th><th>Correctness</th><th>Completeness</th><th>Consistency</th><th>Logs</th><th>QA</th><th>Browser</th><th>Topic</th></tr></thead>
+<tbody>
+<tr><td>T1</td><td>Full Multi-Agent</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1</td><td>15</td><td>approved</td><td>success</td><td>Pilates</td></tr>
+<tr><td>T1</td><td>Single-Agent</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1</td><td>8</td><td>approved</td><td>success</td><td>Pilates</td></tr>
+<tr><td>T2</td><td>Full Multi-Agent</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1</td><td>14</td><td>approved</td><td>success</td><td>silver earrings</td></tr>
+<tr><td>T2</td><td>Single-Agent</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1</td><td>8</td><td>approved</td><td>success</td><td>silver earrings</td></tr>
+<tr><td>T3</td><td>Full Multi-Agent</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1</td><td>14</td><td>approved</td><td>success</td><td>doğa sporları ekipmanları</td></tr>
+<tr><td>T3</td><td>Single-Agent</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1</td><td>8</td><td>approved</td><td>success</td><td>doğa sporları ekipmanları</td></tr>
+<tr><td>T4</td><td>Full Multi-Agent</td><td>0.94</td><td>0.83</td><td>1.00</td><td>1</td><td>13</td><td>approved</td><td>success</td><td>a reformer bed</td></tr>
+<tr><td>T4</td><td>Single-Agent</td><td>0.68</td><td>0.67</td><td>1.00</td><td>0</td><td>8</td><td>approved</td><td>success</td><td>your update</td></tr>
+<tr><td>T5</td><td>Full Multi-Agent</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1</td><td>11</td><td>approved</td><td>skipped</td><td>jewelry</td></tr>
+<tr><td>T5</td><td>Single-Agent</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1</td><td>5</td><td>approved</td><td>skipped</td><td>jewelry</td></tr>
+</tbody></table>
+<h3>When the Multi-Agent System Performed Better</h3>
+<p>The multi-agent system performed better on mixed-intent prompts. The clearest example is T4. The user supplied an exact caption, “Join my class!”, and separately requested a reformer bed image. The multi-agent Task Manager preserved the exact caption while still extracting the image topic as <code>a reformer bed</code>. The single-agent system preserved the caption but lost the visual topic and used <code>your update</code>, which reduced its consistency score.</p>
+<p>This shows the value of task decomposition. The Task Manager separates caption handling from media handling. The Writer can be skipped, while the Visual Prompt Engineer and Media Creator still run.</p>
+<h3>When the Single-Agent System Performed Better</h3>
+<p>The single-agent system was simpler and cheaper for straightforward cases. It averaged 7.4 logs and an LLM step proxy of 1.0. The full multi-agent system averaged 13.4 logs and an LLM step proxy of 2.8. In T1, T2, T3, and T5, the single-agent system produced complete and correct outputs.</p>
+<p>This means the single-agent approach is a strong baseline when the prompt is simple, explicit, or does not require multiple independent checks.</p>
+<h3>Coordination Issues</h3>
+<p>The multi-agent system has more coordination overhead. It must validate Researcher, Writer, Visual Prompt Engineer, Media Creator, QA, and Browser outputs. More steps create more places where latency, retries, or handoff mistakes can occur.</p>
+<p>However, the same checkpoints also improve observability. If QA rejects the caption, the Task Manager can send only the caption-related output back through repair. If media is missing, only the Media Creator needs to be retried. In the single-agent system, internal mistakes are harder to isolate because all responsibilities are combined.</p>
+<h3>Hallucination and Inconsistency Patterns</h3>
+<p>The main inconsistency appeared in the single-agent T4 result. The single agent focused on preserving the exact text but failed to keep the separate image requirement as the topic. This is a common risk when a single model must handle multiple instructions at once.</p>
+<p>During later manual testing, another important issue appeared in the multi-agent visual prompt stage: “outdoor Pilates” was initially converted into an indoor Pilates studio because the visual prompt rule prioritized the word “Pilates” before the word “outdoor.” This was fixed by enforcing a design principle: explicit user constraints such as outdoor/indoor environment must override generic topic defaults.</p>
+<h3>Qualitative Visual Comparison</h3>
+<p>I also reviewed manual UI screenshots from one single-agent run and one multi-agent run. I did not include these screenshots in the quantitative score because the experiment metrics do not measure image aesthetics directly. However, they are useful as qualitative evidence.</p>
+<table>
+<thead><tr><th>Observation Area</th><th>Single-Agent Screenshot</th><th>Multi-Agent Screenshot</th><th>Interpretation</th></tr></thead>
+<tbody>
+<tr><td>Prompt/topic handling</td><td>Topic appeared as <code>this</code> and the caption became generic: “Bring more intention into your day with this.”</td><td>Topic also appeared as <code>this</code> and the caption was similarly generic.</td><td>Both systems can fail when the prompt is parsed too broadly or when the input lacks a clear extracted topic.</td></tr>
+<tr><td>Image relevance</td><td>Generated a realistic person sitting on a sofa.</td><td>Generated a generic desk/workspace image.</td><td>The single-agent image was more human/lifestyle-oriented, but neither image should be treated as a strong match without the original prompt context.</td></tr>
+<tr><td>Workflow trace</td><td>The UI clearly showed a single unified agent.</td><td>The UI showed handoffs across several agents, including skipped steps.</td><td>The screenshots are useful for explaining architecture difference, not for proving visual quality.</td></tr>
+<tr><td>Failure insight</td><td>One agent produced a complete output, but the topic/caption were too vague.</td><td>Multiple agents completed the pipeline, but the final media still depended on correct topic extraction.</td><td>Multi-agent design improves observability, but it does not automatically guarantee better images if the initial topic is wrong.</td></tr>
+</tbody></table>
+<p>For presentation, these screenshots should be shown as a <strong>manual failure/diagnostic case</strong>, not as the main experimental result. The correct claim is: “The controlled experiment measures topic/caption/media existence and consistency. The screenshots show that future work should add a human visual-quality rubric.”</p>
+<h3>Trade-Offs</h3>
+<p>The results show a clear trade-off:</p>
+<ul>
+<li>The single-agent system is faster, cheaper, and easier to implement.</li>
+<li>The multi-agent system is more robust for mixed requirements and easier to debug.</li>
+<li>The multi-agent system costs more in coordination, logs, and model-like steps.</li>
+<li>Dynamic routing is necessary; a multi-agent system should not blindly run every agent.</li>
+</ul>
+<hr>
+<h2>Part 5 - Ablation / Simplification Study</h2>
+<p>For the simplification study, I modified the multi-agent system by removing two components:</p>
+<ul>
+<li>Trend Researcher Agent</li>
+<li>Visual Prompt Engineer Agent</li>
+</ul>
+<p>The simplified multi-agent system still used:</p>
+<ul>
+<li>Task Manager</li>
+<li>Writer</li>
+<li>Media Creator</li>
+<li>QA Agent</li>
+<li>Browser Operator</li>
+</ul>
+<h3>Ablation Results</h3>
+<table>
+<thead><tr><th>System</th><th>Mean Overall</th><th>Mean Logs</th><th>LLM Step Proxy</th><th>Failure Rate</th></tr></thead>
+<tbody>
+<tr><td>Full Multi-Agent</td><td>0.99</td><td>13.4</td><td>2.8</td><td>0.00</td></tr>
+<tr><td>Simplified Multi-Agent</td><td>0.99</td><td>14.8</td><td>1.8</td><td>0.00</td></tr>
+</tbody></table>
+<p>In this deterministic test set, the simplified multi-agent system matched the full system’s average overall score while reducing the LLM step proxy from 2.8 to 1.8. This suggests that Trend Researcher and Visual Prompt Engineer are not always necessary for simple prompts.</p>
+<p>However, this does not mean these agents are useless. The Trend Researcher is useful when the user asks for current trends, hashtags, or popular topics. The Visual Prompt Engineer is useful when real image generation quality matters, because text-to-image models are sensitive to camera, lighting, composition, and negative prompt details.</p>
+<h3>Necessary Components</h3>
+<p>The experiment suggests the following components are core:</p>
+<table>
+<thead><tr><th>Component</th><th>Necessity</th></tr></thead>
+<tbody>
+<tr><td>Task Manager</td><td>Necessary for routing, validation, skipping steps, and repair</td></tr>
+<tr><td>Writer</td><td>Necessary when the caption is missing</td></tr>
+<tr><td>Media Creator</td><td>Necessary when media is requested</td></tr>
+<tr><td>QA Agent</td><td>Necessary for safety and quality validation</td></tr>
+<tr><td>Browser Operator</td><td>Necessary only when upload/publish is requested</td></tr>
+<tr><td>Researcher</td><td>Conditional; useful for trend-based prompts</td></tr>
+<tr><td>Visual Prompt Engineer</td><td>Conditional; useful for high-quality real image generation</td></tr>
+</tbody></table>
+<p>The most important design lesson is that agents should be conditional. The system should start with the minimum required steps and add specialized agents only when they improve the output.</p>
+<hr>
+<h2>Supplementary Real API Trial</h2>
+<p>I also ran the experiment with real external APIs. This run used NVIDIA/Mistral provider paths and is useful for observing operational behavior, but it is not the primary baseline because external APIs can fail or slow down independently of the architecture.</p>
+<p>Output directory:</p>
+<pre><code>projects/Smart_Social_Media_Agent_Orchestrator/outputs/assignment3_experiment/20260514_151828</code></pre>
+<table>
+<thead><tr><th>System</th><th>Mean Overall</th><th>Mean Correctness</th><th>Mean Completeness</th><th>Mean Consistency</th><th>Mean Latency ms</th><th>Failure Rate</th></tr></thead>
+<tbody>
+<tr><td>Full Multi-Agent</td><td>0.99</td><td>0.97</td><td>1.00</td><td>1.00</td><td>89165.11</td><td>0.00</td></tr>
+<tr><td>Simplified Multi-Agent</td><td>0.99</td><td>0.97</td><td>1.00</td><td>1.00</td><td>36903.27</td><td>0.00</td></tr>
+<tr><td>Single-Agent</td><td>0.64</td><td>0.73</td><td>0.55</td><td>0.80</td><td>12981.24</td><td>0.60</td></tr>
+</tbody></table>
+<p>The single-agent score dropped because three image-generation runs failed with a Mistral connection/DNS error: <code>nodename nor servname provided, or not known</code>. This is an external service/network failure, not necessarily a pure architecture failure. The real API trial demonstrates that production systems need retries, fallback providers, and error isolation.</p>
+<hr>
+<h2>Part 6 - Reflection: When Do Agentic Systems Make Sense?</h2>
+<p>Multi-agent systems are beneficial when a task contains multiple distinct responsibilities that can be checked independently. In this project, planning, research, writing, visual prompt engineering, media generation, QA, and browser operation are different types of work. Splitting them into agents makes the system easier to inspect, repair, and extend.</p>
+<p>Multi-agent systems introduce unnecessary complexity when the task is simple or already well specified. If the user only needs a short caption, a single agent is enough. Running multiple agents in that case wastes time, tokens, and engineering effort.</p>
+<p>My design recommendations for future agentic systems are:</p>
+<ul>
+<li>Use a Task Manager only when routing decisions matter.</li>
+<li>Give each agent a narrow responsibility and structured output.</li>
+<li>Validate after every step.</li>
+<li>Add repair paths for common failures.</li>
+<li>Skip agents dynamically when their work is not needed.</li>
+<li>Treat external API failures separately from model reasoning failures.</li>
+<li>Prefer the simplest architecture that meets the quality and reliability requirement.</li>
+</ul>
+<p>For this social media automation task, the multi-agent system is justified for vague, mixed, or incomplete prompts. The single-agent system remains valuable as a baseline because it is simpler and cheaper for straightforward prompts. Therefore, the best design is not “more agents everywhere,” but <strong>dynamic orchestration with the smallest sufficient number of agents</strong>.</p>
+<hr>
+<h2>Responsible Use of AI</h2>
+<p>AI tools were used to help implement and test the systems, but the evaluation design, metrics, interpretation, and final conclusions are my responsibility. I can explain each metric, why deterministic testing was used as the baseline, why real API results were treated separately, and why the ablation study shows that some agents are conditional rather than always necessary.</p>
+</body></html>

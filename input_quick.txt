@@ -1,0 +1,2 @@
+project_name: Tiny_Todo_CLI
+customer_wish: Build a very small Python command-line todo app with only two features: add a todo and list todos. Use JSON file storage. Single user, no authentication, no extra features.

@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Single Agent Output - AetherFlow AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body class="result-body">
+  <header class="result-topbar">
+    <div class="result-topbar-brand">
+      <span class="result-topbar-mark">
+        <span class="material-symbols-outlined">psychology_alt</span>
+      </span>
+      <div>
+        <p class="result-kicker">AetherFlow AI</p>
+        <strong>Single Agent Output</strong>
+      </div>
+    </div>
+    <div class="result-topbar-actions">
+      <a href="{{ url_for('index') }}" class="result-topbar-link">Create another post</a>
+      <span class="result-run-pill">Run {{ run_id }}</span>
+    </div>
+  </header>
+
+  <main class="shell result-shell">
+    {% if error %}
+      <section class="result-banner error">
+        <span class="material-symbols-outlined">error</span>
+        <div>
+          <strong>Pipeline error</strong>
+          <p>{{ error }}</p>
+        </div>
+      </section>
+    {% endif %}
+
+    <section class="result-hero">
+      <div>
+        <p class="eyebrow">Single-agent baseline</p>
+        <h1>{{ state.topic or "Social post" }}</h1>
+        <p class="hero-copy">This result was produced by one agent handling planning, writing, media, QA, and local demo upload.</p>
+      </div>
+      <div class="result-status-grid">
+        <article class="result-stat">
+          <span>Architecture</span>
+          <strong>Single Agent</strong>
+        </article>
+        <article class="result-stat">
+          <span>QA</span>
+          <strong>{{ state.qa_status or "not run" }}</strong>
+        </article>
+        <article class="result-stat">
+          <span>Provider</span>
+          <strong>{{ result.get("nvidia", {}).get("writer_model", "mock") if result.get("nvidia") else "mock" }}</strong>
+        </article>
+        <article class="result-stat">
+          <span>Image</span>
+          <strong>{{ state.image_provider or "mock" }}</strong>
+        </article>
+      </div>
+    </section>
+
+    <section class="result-grid">
+      <article class="result-panel result-preview-panel">
+        <div class="result-panel-head">
+          <div>
+            <p class="eyebrow">Published preview</p>
+            <h2>Final post composition</h2>
+          </div>
+          <span class="result-chip on">{{ state.platform or "local_demo" }}</span>
+        </div>
+
+        <div class="result-preview-frame">
+          <div class="result-phone">
+            <div class="result-phone-bar">
+              <span class="material-symbols-outlined">arrow_back</span>
+              <strong>Post</strong>
+              <span class="material-symbols-outlined">more_horiz</span>
+            </div>
+            <div class="result-account-row">
+              <div class="result-avatar">SA</div>
+              <div>
+                <strong>single_agent_ai</strong>
+                <p>Unified automation baseline</p>
+              </div>
+            </div>
+
+            <div class="result-media-frame">
+              {% if generated_media_url %}
+                <img src="{{ generated_media_url }}" alt="Generated social media visual">
+              {% else %}
+                <div class="empty-media">No generated media available.</div>
+              {% endif %}
+            </div>
+
+            <div class="result-action-row">
+              <span class="material-symbols-outlined">favorite</span>
+              <span class="material-symbols-outlined">mode_comment</span>
+              <span class="material-symbols-outlined">send</span>
+              <span class="material-symbols-outlined">bookmark</span>
+            </div>
+
+            <div class="result-caption-block">
+              <p><strong>single_agent_ai</strong>{{ state.caption or "No caption generated." }}</p>
+            </div>
+          </div>
+        </div>
+
+        {% if reference_image_url %}
+          <div class="result-reference">
+            <span>Reference upload</span>
+            <img src="{{ reference_image_url }}" alt="Reference upload">
+          </div>
+        {% endif %}
+      </article>
+
+      <aside class="result-sidebar">
+        <section class="result-panel">
+          <div class="result-panel-head">
+            <div>
+              <p class="eyebrow">Generated copy</p>
+              <h2>Caption</h2>
+            </div>
+          </div>
+          <div class="result-copy-box">
+            <p>{{ state.caption or "No caption generated." }}</p>
+          </div>
+        </section>
+
+        <section class="result-panel">
+          <div class="result-panel-head">
+            <div>
+              <p class="eyebrow">Experiment trace</p>
+              <h2>Run summary</h2>
+            </div>
+            <span class="result-chip">1 agent</span>
+          </div>
+          <div class="result-summary-grid">
+            <div><span>Topic</span><strong>{{ state.topic or "—" }}</strong></div>
+            <div><span>Visual style</span><strong>{{ state.visual_style or "—" }}</strong></div>
+            <div><span>Media path</span><strong>{{ state.media_path or "—" }}</strong></div>
+            <div><span>Output dir</span><strong>{{ result.get("output_dir", "—") }}</strong></div>
+          </div>
+          <div class="result-json">
+            <pre>{{ result | tojson(indent=2) }}</pre>
+          </div>
+        </section>
+
+        <section class="result-panel">
+          <div class="result-panel-head">
+            <div>
+              <p class="eyebrow">Execution log</p>
+              <h2>Single-agent timeline</h2>
+            </div>
+          </div>
+          <ol class="result-timeline">
+            {% for log in logs %}
+              <li class="{{ log.status }}">
+                <div class="timeline-dot"></div>
+                <div>
+                  <strong>{{ log.step }}</strong>
+                  <span>{{ log.status }}</span>
+                  <p>{{ log.message }}</p>
+                </div>
+              </li>
+            {% endfor %}
+          </ol>
+        </section>
+
+        <section class="result-panel result-actions">
+          <a href="{{ url_for('index') }}" class="primary-button result-button">
+            <span>Generate another post</span>
+            <strong>Restart</strong>
+          </a>
+          <a class="secondary-button" href="{{ url_for('run_status', run_id=run_id) }}">
+            View single-agent run
+          </a>
+        </section>
+      </aside>
+    </section>
+  </main>
+</body>
+</html>

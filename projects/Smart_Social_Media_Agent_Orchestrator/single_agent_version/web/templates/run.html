@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AetherFlow AI - Single Agent Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body class="tracking-body" data-run-id="{{ run_id }}">
+  <div class="tracking-bg" aria-hidden="true">
+    <div class="tracking-dot-grid"></div>
+    <div class="tracking-gradient"></div>
+  </div>
+
+  <header class="tracking-topbar">
+    <a class="tracking-brand" href="{{ url_for('index') }}">AetherFlow AI</a>
+    <div class="tracking-actions">
+      <span class="material-symbols-outlined">notifications</span>
+      <span class="material-symbols-outlined">settings</span>
+      <div class="operator-avatar">SA</div>
+    </div>
+  </header>
+
+  <aside class="tracking-sidebar">
+    <div class="neural-card">
+      <div class="neural-icon">
+        <span class="material-symbols-outlined">psychology</span>
+      </div>
+      <div>
+        <h2>NEURAL OS</h2>
+        <p>Single Agent</p>
+      </div>
+    </div>
+
+    <nav class="side-links">
+      <a href="{{ url_for('index') }}"><span class="material-symbols-outlined">dashboard</span>Command Center</a>
+      <a href="#" class="active"><span class="material-symbols-outlined">psychology</span>Single Agent</a>
+      <a href="#"><span class="material-symbols-outlined">auto_awesome</span>Output Gallery</a>
+    </nav>
+
+    <a class="deploy-button" href="{{ url_for('index') }}">
+      <span class="material-symbols-outlined">rocket_launch</span>
+      Deploy Agent
+    </a>
+  </aside>
+
+  <main class="tracking-main">
+    <section class="protocol-header">
+      <div>
+        <p class="tracking-kicker">Single-Agent Orchestration</p>
+        <h1>Unified Content Protocol</h1>
+        <p id="live-status">Queued. Single agent is preparing the route.</p>
+      </div>
+      <div class="protocol-chips">
+        <div class="protocol-chip">
+          <span class="status-dot"></span>
+          <strong id="pipeline-state">Single Agent Active</strong>
+        </div>
+        <div class="protocol-chip">
+          <span>Run</span>
+          <strong>{{ run_id }}</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="workflow-panel" aria-label="Single agent workflow timeline">
+      <div class="tracking-rail" id="agent-rail">
+        {% for key, label, description in agent_order %}
+          <article class="tracking-agent waiting" data-agent="{{ key }}">
+            <div class="node-status-card">
+              <span class="node-status-label">WAITING</span>
+              <span class="node-message">{{ description }}</span>
+            </div>
+            <div class="tracking-node-orb">
+              <span class="material-symbols-outlined">psychology_alt</span>
+              <i></i>
+            </div>
+            <div class="node-title">
+              <h3>{{ label }}</h3>
+              <p>Unified Execution</p>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="workflow-detail-grid">
+      <article class="tracking-panel active-node-panel">
+        <h2>Active Node: <span id="active-node-title">Single Social Agent</span></h2>
+        <div class="node-metrics">
+          <div>
+            <span>Task Focus</span>
+            <strong id="active-node-focus">Planning user request</strong>
+          </div>
+          <div>
+            <span>Provider</span>
+            <strong id="active-provider">Waiting for provider</strong>
+          </div>
+          <div>
+            <span>Image Provider</span>
+            <strong id="active-image-provider">Waiting</strong>
+          </div>
+        </div>
+        <div class="node-progress-wrap">
+          <div class="node-progress-track"><div id="node-progress-fill"></div></div>
+          <div class="node-progress-label">
+            <span id="active-node-message">Initializing single-agent workflow...</span>
+            <strong id="node-progress-percent">0%</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="tracking-panel terminal-panel">
+        <div class="terminal-icon">
+          <span class="material-symbols-outlined">terminal</span>
+        </div>
+        <p>All work is performed by one agent. Logs show internal phases rather than handoffs between specialized agents.</p>
+        <a class="terminal-button" id="result-link" href="#" hidden>Open Final Result</a>
+      </article>
+    </section>
+
+    <section class="workflow-output-grid">
+      <article class="tracking-panel">
+        <h2>Current Caption</h2>
+        <div id="live-caption" class="tracking-caption muted">Waiting for Single Agent...</div>
+      </article>
+
+      <article class="tracking-panel">
+        <h2>Generated Media</h2>
+        <div id="live-media" class="tracking-media empty-media">Waiting for media tool...</div>
+      </article>
+    </section>
+
+    <section class="tracking-panel log-panel">
+      <h2>Single-Agent Log Stream</h2>
+      <ol class="tracking-log" id="live-log"></ol>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='run.js') }}"></script>
+</body>
+</html>

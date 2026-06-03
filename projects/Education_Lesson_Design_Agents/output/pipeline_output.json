@@ -1,0 +1,58 @@
+{
+  "brief": {
+    "topic": "Fotosentez",
+    "grade_level": "7. sinif",
+    "duration": "45 dakika"
+  },
+  "program_plan": {
+    "goal": "Fotosentez konusunda 45 dakikalik ders tasarimi",
+    "grade_level": "7. sinif",
+    "constraints": "Tek ders, etkilesimli etkinlik, olculebilir cikti",
+    "success_metric": "Ders sonu mini quizde en az %70 dogru"
+  },
+  "tasks": [
+    {
+      "id": "EDU-001",
+      "title": "Ogrenme kazanimi yaz",
+      "owner": "curriculum_designer",
+      "status": "done",
+      "details": {
+        "learning_outcome": "Ogrenci fotosentez surecini 3 adimda aciklar."
+      }
+    },
+    {
+      "id": "EDU-002",
+      "title": "Ders akis plani olustur",
+      "owner": "curriculum_designer",
+      "status": "done",
+      "details": {
+        "lesson_flow": "10 dk giris, 20 dk etkinlik, 10 dk uygulama, 5 dk degerlendirme"
+      }
+    },
+    {
+      "id": "EDU-003",
+      "title": "Sinif ici etkinlik tasarla",
+      "owner": "activity_planner",
+      "status": "done",
+      "details": {
+        "activity": "Yaprak modeli uzerinde isik, su ve CO2 etkisini kucuk gruplarla canlandirma",
+        "material": "Kagit yaprak kartlari, renkli kalem, cikis karti"
+      }
+    },
+    {
+      "id": "EDU-004",
+      "title": "Olcme degerlendirme hazirla",
+      "owner": "assessment_agent",
+      "status": "done",
+      "details": {
+        "quiz": "5 soruluk cikis quizi",
+        "rubric": "Bilgi dogrulugu %50, aciklama netligi %30, kavram baglantisi %20"
+      }
+    }
+  ],
+  "quality_review": {
+    "status": "PASS",
+    "review_note": "Plan sinif ici etkinlik ve olcme adimini iceriyor.",
+    "target_metric": "Ders sonu mini quizde en az %70 dogru"
+  }
+}

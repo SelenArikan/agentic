@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AetherFlow AI - Input Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body class="input-body">
+  <div class="input-bg" aria-hidden="true"></div>
+
+  <aside class="input-sidebar">
+    <div class="input-sidebar-head">
+      <h1>NEURAL OS</h1>
+      <p>v4.2 Stable</p>
+    </div>
+    <nav class="input-side-links">
+      <a class="active" href="{{ url_for('index') }}"><span class="material-symbols-outlined">dashboard</span>Command Center</a>
+      <a href="#"><span class="material-symbols-outlined">account_tree</span>Neural Pipeline</a>
+      <a href="#"><span class="material-symbols-outlined">auto_awesome</span>Output Gallery</a>
+    </nav>
+    <button class="input-deploy-button" type="button">
+      <span class="material-symbols-outlined">rocket_launch</span>
+      Deploy Agent
+    </button>
+    <nav class="input-side-links input-support">
+      <a href="#"><span class="material-symbols-outlined">help</span>Documentation</a>
+      <a href="#"><span class="material-symbols-outlined">contact_support</span>Support</a>
+    </nav>
+  </aside>
+
+  <header class="input-topbar">
+    <div class="input-brand">AetherFlow AI</div>
+    <div class="input-actions">
+      <span class="material-symbols-outlined">notifications</span>
+      <span class="material-symbols-outlined">settings</span>
+      <div class="input-avatar"><span class="material-symbols-outlined">person</span></div>
+    </div>
+  </header>
+
+  <main class="input-main">
+    <form action="{{ url_for('generate') }}" method="post" enctype="multipart/form-data" id="post-form">
+      <section class="input-workflow-card">
+        <div class="input-flow-line"><div></div></div>
+        {% set nodes = [
+          ("Task Manager", "Done"),
+          ("Trend Researcher", "Waiting"),
+          ("Content Writer", "Waiting"),
+          ("Visual Prompt", "Waiting"),
+          ("Media Creator", "Waiting"),
+          ("Review Agent", "Waiting"),
+          ("Publish Agent", "Waiting")
+        ] %}
+        {% for label, status in nodes %}
+          <article class="input-mini-node {{ 'done' if loop.first else 'waiting' }}">
+            <div class="mini-orb"></div>
+            <strong>{{ label }}</strong>
+            <span>{{ status }}</span>
+          </article>
+        {% endfor %}
+        <div class="system-online">
+          <i></i>
+          <span>System Online</span>
+        </div>
+      </section>
+
+      <div class="input-grid">
+        <section class="input-left">
+          <article class="input-glass-card">
+            <div class="input-card-head">
+              <h2><span class="material-symbols-outlined">edit_note</span>Content Directives</h2>
+              <span id="token-count">0 / 2000 TOKENS</span>
+            </div>
+            <label class="neon-field prompt-field">
+              <textarea name="prompt" id="main-prompt" required placeholder="Enter instructions for the neural generation protocol..."></textarea>
+              <button type="button" title="Magic Enhance"><span class="material-symbols-outlined">auto_fix_high</span></button>
+            </label>
+          </article>
+
+          <article class="input-glass-card">
+            <div class="input-card-head">
+              <h2><span class="material-symbols-outlined">tune</span>Creative Brief</h2>
+              <span>GUIDANCE ONLY</span>
+            </div>
+            <label class="neon-field brief-field">
+              <textarea name="post_details" placeholder="Tone, audience, CTA, colors, mood, visual constraints, things to avoid..."></textarea>
+            </label>
+            <p class="input-help">These details guide caption and image generation. They are not copied directly into the caption.</p>
+          </article>
+
+          <article class="input-glass-card">
+            <h3><span class="material-symbols-outlined">share</span>Target Vectors</h3>
+            <div class="platform-grid" data-radio-group="platform">
+              <label class="platform-card active">
+                <input type="radio" name="platform" value="local_demo" checked>
+                <span class="material-symbols-outlined">terminal</span>
+                <strong>LOCAL DEMO</strong>
+              </label>
+              <label class="platform-card">
+                <input type="radio" name="platform" value="instagram">
+                <span class="material-symbols-outlined">photo_camera</span>
+                <strong>INSTAGRAM</strong>
+              </label>
+              <label class="platform-card">
+                <input type="radio" name="platform" value="x">
+                <span class="material-symbols-outlined">tag</span>
+                <strong>X / TWITTER</strong>
+              </label>
+              <label class="platform-card">
+                <input type="radio" name="platform" value="linkedin">
+                <span class="material-symbols-outlined">work</span>
+                <strong>LINKEDIN</strong>
+              </label>
+            </div>
+          </article>
+
+          <article class="input-glass-card">
+            <h3><span class="material-symbols-outlined">label</span>Metadata Injection</h3>
+            <div class="metadata-grid">
+              <label class="neon-select">
+                <span>Visual style</span>
+                <select name="visual_style">
+                  <option value="fitness-focused">Fitness-focused</option>
+                  <option value="minimal">Minimal</option>
+                  <option value="realistic" selected>Realistic</option>
+                  <option value="colorful">Colorful</option>
+                  <option value="luxury">Luxury</option>
+                  <option value="warm editorial">Warm editorial</option>
+                </select>
+              </label>
+              <label class="neon-select">
+                <span>Upload mode</span>
+                <select name="upload_mode">
+                  <option value="local_demo" selected>Upload to local demo</option>
+                  <option value="draft">Draft only</option>
+                </select>
+              </label>
+            </div>
+            <label class="neon-field exact-caption">
+              <input type="text" name="exact_caption" placeholder="Exact caption, optional">
+            </label>
+          </article>
+        </section>
+
+        <section class="input-right">
+          <article class="input-glass-card">
+            <h3><span class="material-symbols-outlined">memory</span>Processing Engine</h3>
+            <div class="engine-stack">
+              <label class="engine-card active">
+                <input type="radio" name="provider" value="nvidia" checked>
+                <span class="material-symbols-outlined">psychology_alt</span>
+                <div>
+                  <strong>NVIDIA NIM</strong>
+                  <p>Gemma / MiniMax text agents</p>
+                </div>
+                <i class="material-symbols-outlined">check_circle</i>
+              </label>
+              <label class="engine-card">
+                <input type="radio" name="provider" value="mock">
+                <span class="material-symbols-outlined">memory_alt</span>
+                <div>
+                  <strong>Local Mock</strong>
+                  <p>Fast offline fallback</p>
+                </div>
+              </label>
+            </div>
+          </article>
+
+          <article class="input-glass-card">
+            <h3><span class="material-symbols-outlined">image</span>Image Provider</h3>
+            <div class="engine-stack compact">
+              <label class="engine-card active">
+                <input type="radio" name="image_provider" value="nvidia" checked>
+                <span class="material-symbols-outlined">bolt</span>
+                <div><strong>NVIDIA FLUX</strong><p>Hosted image candidates</p></div>
+              </label>
+              <label class="engine-card">
+                <input type="radio" name="image_provider" value="mistral">
+                <span class="material-symbols-outlined">auto_awesome</span>
+                <div><strong>Mistral</strong><p>image_generation tool</p></div>
+              </label>
+              <label class="engine-card">
+                <input type="radio" name="image_provider" value="auto">
+                <span class="material-symbols-outlined">sync_alt</span>
+                <div><strong>Auto Chain</strong><p>NVIDIA then Mistral</p></div>
+              </label>
+              <label class="engine-card">
+                <input type="radio" name="image_provider" value="pillow">
+                <span class="material-symbols-outlined">image_not_supported</span>
+                <div><strong>Pillow</strong><p>Local placeholder</p></div>
+              </label>
+            </div>
+          </article>
+
+          <article class="input-glass-card">
+            <h3><span class="material-symbols-outlined">upload_file</span>Visual Anchors</h3>
+            <label class="upload-zone">
+              <input type="file" name="reference_image" accept=".jpg,.jpeg,.png,.webp,image/*" id="reference-input">
+              <span class="material-symbols-outlined">cloud_upload</span>
+              <strong>Drag assets to upload</strong>
+              <small>PNG, JPG, WEBP up to 10MB</small>
+              <img id="preview" alt="" hidden>
+            </label>
+          </article>
+
+          <article class="input-glass-card">
+            <h3><span class="material-symbols-outlined">perm_media</span>Media Behavior</h3>
+            <div class="media-mode-stack" data-radio-group="media_mode">
+              <label class="mode-row active"><input type="radio" name="media_mode" value="generate" checked> Generate new image</label>
+              <label class="mode-row"><input type="radio" name="media_mode" value="use_uploaded"> Use uploaded image as final media</label>
+              <label class="mode-row"><input type="radio" name="media_mode" value="none"> Text-only post</label>
+            </div>
+            <label class="playwright-toggle">
+              <input type="checkbox" name="use_playwright">
+              <span>Use Playwright for local demo page</span>
+            </label>
+          </article>
+
+          <button class="initialize-button" type="submit">
+            <span class="material-symbols-outlined">generating_tokens</span>
+            <strong>Initialize Generation</strong>
+          </button>
+        </section>
+      </div>
+    </form>
+  </main>
+
+  <nav class="input-bottom-nav">
+    <a class="active" href="{{ url_for('index') }}"><span class="material-symbols-outlined">dashboard</span><small>Command</small></a>
+    <a href="#"><span class="material-symbols-outlined">account_tree</span><small>Pipeline</small></a>
+    <a href="#"><span class="material-symbols-outlined">auto_awesome</span><small>Gallery</small></a>
+  </nav>
+
+  <div class="loading" id="loading" hidden>
+    <div></div>
+    <p>Agents are working. Image generation can take a moment.</p>
+  </div>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

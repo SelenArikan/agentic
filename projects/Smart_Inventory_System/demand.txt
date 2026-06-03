@@ -1,0 +1,1 @@
+CLARIFICATION_NEEDED: What specific product details should be stored (e.g., name, quantity, price, SKU)? | How should the app handle low stock or out-of-stock items? | Will this app be a desktop application, a web application, or a mobile application?
